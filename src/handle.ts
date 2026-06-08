@@ -15,7 +15,7 @@ import Session from './session.ts';
 import TransactionManager from './tmanager.ts';
 import type { TransactionOwner, PendingTransaction } from './tmanager.ts';
 
-// TODO: make these types not terrible
+// Ben TODO: make these types not terrible
 export type JanodeRequest = any
 export type JanodeResponse = any
 export type JanusMessage = { [index: string | symbol]: any }
@@ -154,7 +154,7 @@ class Handle extends EventEmitter implements TransactionOwner {
    *
    * @private
    * @param id - The transaction identifier
-   * @returns 
+   * @returns // Ben TODO
    */
   _isDetachTx(id: string): boolean {
     const tx = this._tm.get(id);

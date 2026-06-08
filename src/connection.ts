@@ -26,7 +26,7 @@ import type { CircularIterator } from './utils/utils.ts';
 export interface GenericTransport {
   open: () => Promise<Connection>,
   close: () => Promise<unknown>,
-  send: (request: unknown) => Promise<void>, // TODO: the JSDocs for transport-ws and transport-unix mention that the promise is meant to return an object, but neither of them (seemingly) actually do?
+  send: (request: unknown) => Promise<void>, // Ben TODO: the JSDocs for transport-ws and transport-unix mention that the promise is meant to return an object, but neither of them (seemingly) actually do?
   getRemoteHostname: () => string | null
 }
 
@@ -46,7 +46,7 @@ export interface GenericTransport {
 class Connection extends EventEmitter {
   _config: Configuration; // Meant to be private, but used in transport-ws.ts
   _tm: TransactionManager; // Meant to be private, but used in Session.ts
-  private _sessions: Map<unknown, Session>; // TODO: Fix Type
+  private _sessions: Map<unknown, Session>; // Ben TODO: Fix Type
   _address_iterator: CircularIterator<ServerObjectConf> // Meant to be private but used in transport-unix.ts
   id: number;
   name: string;

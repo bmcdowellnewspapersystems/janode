@@ -63,7 +63,6 @@ interface Constructor<T> {
  * @property [Handle] - The class implementing the handle
  * @property [EVENT] - The object containing the events emitted by the plugin
  */
-//TODO: event = JanodeCoreEvents?
 export type PluginDescriptor<T extends Handle = Handle> = {
   id: string,
   Handle?: Constructor<T>,
@@ -130,7 +129,6 @@ export type PluginDescriptor<T extends Handle = Handle> = {
  *   }],
  * }], 'server_B');
  */
-// TODO: I removed config = {}
 const connect = (config: RawConfiguration | RawConfiguration[], key?: number | string): Promise<Connection> => {
   Logger.info(`${LOG_NS} creating new connection`);
   const janus_server_list = Array.isArray(config) ? config : [config];

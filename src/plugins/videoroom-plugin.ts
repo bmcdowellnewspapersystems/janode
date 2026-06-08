@@ -125,8 +125,6 @@ export class VideoRoomHandle extends Handle {
    * @returns A falsy value for unhandled events, a truthy value for handled events
    */
   handleMessage(janus_message: JanusMessage): PluginEvent | null {
-    type Stream = unknown
-
     const { plugindata, transaction } = janus_message;
     if (plugindata && plugindata.data && plugindata.data.videoroom) {
       /**
@@ -988,7 +986,6 @@ export class VideoRoomHandle extends Handle {
    * @param params.jsep - The JSEP answer
    * @param [params.e2ee] - True to hint an end-to-end encrypted negotiation
    */
-  // TODO: I changed it to RTCsessionDescriptionInit
   async start({ jsep, e2ee }: { jsep: JSEP; e2ee?: boolean; }): Promise<VIDEOROOM_EVENT_STARTED> {
     const body = {
       request: REQUEST_START,
@@ -1458,7 +1455,7 @@ export type VideoRoomData = object
 
 /**
  * The response event when a publisher has joined.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed identifier
  * @property [display] - The dsplay name, if available
@@ -1496,7 +1493,7 @@ export type VIDEOROOM_EVENT_PUB_JOINED = {
 
 /**
  * The response event when a subscriber has joined.
- * 
+ *
  * @property - The involved room
  * @property - The published feed identifier
  * @property - The published feed display name
@@ -1512,7 +1509,7 @@ export type VIDEOROOM_EVENT_SUB_JOINED = {
 
 /**
  * The response event to a participant list request.
- * 
+ *
  * @property room - The involved room
  * @property feed - The current published feed
  * @property participants - The list of current participants
@@ -1534,7 +1531,7 @@ export type VIDEOROOM_EVENT_PARTICIPANTS_LIST = {
 
 /**
  * The response event for room create request.
- * 
+ *
  * @property room - The created room
  * @property permanent - True if the room has been persisted on the Janus configuratin file
  */
@@ -1545,7 +1542,7 @@ export type VIDEOROOM_EVENT_CREATED = {
 
 /**
  * The response event for room destroy request.
- * 
+ *
  * @property room - The destroyed room
  * @property permanent - True if the room has been removed from the Janus configuratin file
  */
@@ -1605,7 +1602,7 @@ export type RtpForwarder = {
 
 /**
  * The response event for RTP forward start request.
- * 
+ *
  * @property room - The involved room
  * @property [forwarder] - The forwarder object
  * @property [forwarders] - [multistream] The array of forwarders
@@ -1618,7 +1615,7 @@ export type VIDEOROOM_EVENT_RTP_FWD_STARTED = {
 
 /**
  * The response event for RTP forward stop request.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed identifier being forwarded
  * @property stream - The forwarder identifier
@@ -1632,7 +1629,7 @@ export type VIDEOROOM_EVENT_RTP_FWD_STOPPED = {
 /**
  * The response event for RTP forwarders list request.
  * @property {number|string} room - The involved room
- * 
+ *
  * @property {object[]} forwarders - The list of forwarders
  * @property {number|string} forwarders[].feed - The feed that is being forwarded
  * @property {RtpForwarder[]} forwarders[].forwarders -The list of the forwarders for this feed
@@ -1656,7 +1653,7 @@ export type VIDEOROOM_EVENT_LIST = {
 
 /**
  * The response event for ACL tokens edit (allowed) request.
- * 
+ *
  * @property list - The updated, complete, list of allowed tokens
  */
 export type VIDEOROOM_EVENT_ALLOWED = {
@@ -1705,7 +1702,7 @@ export type VIDEOROOM_EVENT_STARTED = {
 
 /**
  * The response event for subscriber pause request.
- * 
+ *
  * room - The involved room
  * feed - The feed that has been paused
  * paused - A string with the value returned by Janus
@@ -1718,7 +1715,7 @@ export type VIDEOROOM_EVENT_PAUSED = {
 
 /**
  * The response event for subscriber switch request.
- * 
+ *
  * @property room - The involved room
  * @property [from_feed] - The feed that has been switched from
  * @property [to_feed] - The feed that has been switched to
@@ -1761,7 +1758,7 @@ export type VIDEOROOM_EVENT_LEAVING = {
 
 /**
  * The response event for the kick request.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed that has been kicked
  */
@@ -1772,7 +1769,7 @@ export type VIDEOROOM_EVENT_KICKED = {
 
 /**
  * The response event for the recording enabled request.
- * 
+ *
  * @property room - The involved room
  * @property recording - Whether or not the room recording is now enabled
  */
@@ -1783,7 +1780,7 @@ export type VIDEOROOM_EVENT_RECORDING_ENABLED_STATE = {
 
 /**
  * [multistream] The response event for update subscriber request.
- * 
+ *
  * @property - The involved room
  * @property - The updated JSEP offer
  * @property - List of the updated streams in this subscription
@@ -1794,7 +1791,7 @@ export type VIDEOROOM_EVENT_UPDATED = {
   streams: object[];
 }
 
-// TODO: How do i make this into types?
+// Ben TODO: How do i make this into types?
 /**
  * The exported plugin descriptor.
  *

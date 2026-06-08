@@ -127,7 +127,7 @@ class TransportWs implements GenericTransport, TransactionOwner {
         /* Set the ping/pong task */
         this._setPingTask(PING_TIME_SECS * 1000);
         /* Resolve the promise and return this connection */
-        //TODO: Fix this
+        // Ben TODO: Fix this
         //@ts-expect-error
         resolve(this);
       }, { once: true });
@@ -349,7 +349,7 @@ class TransportWs implements GenericTransport, TransactionOwner {
         this._ws?.close();
         /* Add a listener to resolve the promise */
         //@ts-expect-error
-        // TODO: Fix this
+        // Ben TODO: Fix this
         this._ws?.addEventListener('close', resolve, { once: true });
       } catch (error) {
         Logger.error(`${LOG_NS} ${this.name} error while closing websocket (${(error as Error).message})`);
@@ -368,7 +368,7 @@ class TransportWs implements GenericTransport, TransactionOwner {
    * @param request - The request to be sent
    * @returns A promise resolving with a response from Janus
    */
-  // TODO: Originally returned Promsie<Object>, but it seems like it doesn't actually return anything?
+  // Ben TODO: Originally returned Promsie<Object>, but it seems like it doesn't actually return anything?
   async send(request: any): Promise<void> {
     /* Check connection status */
     let error;

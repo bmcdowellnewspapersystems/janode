@@ -137,7 +137,7 @@ class TransportUnix implements GenericTransport, TransactionOwner {
       socket.on('connect', () => {
         Logger.info(`${LOG_NS} ${this.name} unix socket connected`);
         connected = true;
-        //TODO: Fix this
+        //Ben TODO: Fix this
         //@ts-expect-error
         if (bound && connected) resolve(this);
       });
@@ -147,7 +147,7 @@ class TransportUnix implements GenericTransport, TransactionOwner {
         /* Resolve the promise and return this connection */
         bound = true;
         socket.connect(this._connection._address_iterator.currElem().url.split('file://')[1]);
-        // TODO: fix this
+        // Ben TODO: fix this
         //@ts-expect-error
         if (bound && connected) resolve(this);
       });
@@ -264,7 +264,6 @@ class TransportUnix implements GenericTransport, TransactionOwner {
    *
    * @returns The hostname of the Janus server
    */
-  // TODO: The type was originally string
   getRemoteHostname(): string | null {
     if (this._opened) {
       return (this._connection._address_iterator.currElem().url.split('file://')[1]);
@@ -300,7 +299,7 @@ class TransportUnix implements GenericTransport, TransactionOwner {
    * @param request - The request to be sent
    * @returns A promise resolving with a response from Janus
    */
-  // TODO: It seems like this just resolves with void? but this seems wrong
+  // Ben TODO: It seems like this just resolves with void? but this disagrees with the comment?
   async send(request: JanodeRequest): Promise<void> {
     /* Check connection status */
     let error;
