@@ -16,7 +16,7 @@ import TransactionManager from './tmanager.ts';
 import type { TransactionOwner, PendingTransaction } from './tmanager.ts';
 import { VideoRoomHandleEventMap } from './plugins/videoroom-plugin.ts';
 
-// TODO: are JanodeRequest/JanusMessage and JanodeResponse/JanodeEvent the same thing?
+// Ben TODO: make these types not terrible
 export type JanodeRequest = any
 export type JanodeResponse = any
 export type JanusMessage = any
@@ -163,7 +163,7 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
    *
    * @private
    * @param id - The transaction identifier
-   * @returns 
+   * @returns // Ben TODO
    */
   _isDetachTx(id: string): boolean {
     const tx = this._tm.get(id);
@@ -403,7 +403,7 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
    *
    * @private
    */
-  _newPluginEvent(janus_message: JanusMessage): JanodeEvent {
+  _newPluginEvent(janus_message: JanusMessage) {
     /* Prepare an object for the output Janode event */
     const janode_event: any = {
       /* The name of the resolved event */
@@ -427,7 +427,7 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
    *
    * @private
    */
-  _getPluginEvent(janus_message: JanusMessage): JanodeCoreEvents {
+  _getPluginEvent(janus_message: JanusMessage) {
     return janus_message[PLUGIN_EVENT_SYM] || {};
   }
 
@@ -464,8 +464,8 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
   /**
    * Helper to close a transaction with success.
    *
-   * @property {string} id - The transaction id
-   * @property {Object} [data] - The callback success data
+   * @property id - The transaction id
+   * @property [data] - The callback success data
    * @returns {void}
    */
   closeTransactionWithSuccess(id: string, data: JanodeResponse): void {
@@ -577,7 +577,7 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
       throw error;
     }
 
-    const request: any = {
+    const request: { [index: string]: any } = {
       janus: JANUS.REQUEST.TRICKLE
     };
 
@@ -626,7 +626,7 @@ class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> imp
    * await handle.message(body, jsep);
    *
    */
-  async message(body: any, jsep?: RTCSessionDescription): Promise<JanodeResponse> {
+  async message(body: any, jsep?: RTCSessionDescriptionInit): Promise<JanodeResponse> {
     const request: any = {
       janus: JANUS.REQUEST.MESSAGE,
       body,

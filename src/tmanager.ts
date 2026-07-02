@@ -5,8 +5,8 @@
  * @private
  */
 
-// TODO: It seems like some owners have a numeric string, and others just have a number.
-// I should probably make sure this is correct
+// Ben TODO: It seems like some owners have a numeric string, and others just have a number.
+// Might just be an issue with the library?
 export type TransactionOwner = { id: string | number }
 export type Response = any
 

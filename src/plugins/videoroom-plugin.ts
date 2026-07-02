@@ -1,5 +1,3 @@
-//@ts-nocheck
-
 /**
  * This module contains the implementation of the VideoRoom plugin (ref. {@link https://janus.conf.meetecho.com/docs/videoroom.html}).
  * @module videoroom-plugin
@@ -107,6 +105,10 @@ const PLUGIN_EVENT: VideoRoomPluginEvents = {
   ERROR: 'videoroom_error',
 };
 
+interface JSEP extends RTCSessionDescriptionInit {
+  e2ee?: boolean;
+};
+
 /**
  * The class implementing the VideoRoom plugin (ref. {@link https://janus.conf.meetecho.com/docs/videoroom.html}).<br>
  *
@@ -160,7 +162,7 @@ export class VideoRoomHandle extends Handle {
       /**
        * @type {VideoRoomData}
        */
-      const message_data = plugindata.data;
+      const message_data: any = plugindata.data;
       const { videoroom, error, error_code, room } = message_data;
 
       /* Prepare an object for the output Janode event */
@@ -214,9 +216,9 @@ export class VideoRoomHandle extends Handle {
 
           janode_event.data.feed = message_data.id;
           janode_event.data.description = message_data.description;
-          janode_event.data.private_id = message_data.private_id;
-          janode_event.data.publishers = message_data.publishers.map(({ id, display, talking, audio_codec, video_codec, simulcast, streams }) => {
-            const pub = {
+          janode_event.data.private_id = message_data.private_id; // TODO: any
+          janode_event.data.publishers = message_data.publishers.map(({ id, display, talking, audio_codec, video_codec, simulcast, streams }: any) => {
+            const pub: { [index: string]: unknown } = {
               feed: id,
               display,
             };
@@ -259,8 +261,8 @@ export class VideoRoomHandle extends Handle {
 
         /* Participants list */
         case 'participants':
-          janode_event.data.participants = message_data.participants.map(({ id, display, publisher, talking }) => {
-            const peer = {
+          janode_event.data.participants = message_data.participants.map(({ id, display, publisher, talking }: any) => {
+            const peer: { [index: string]: unknown } = {
               feed: id,
               display,
               publisher,
@@ -287,7 +289,7 @@ export class VideoRoomHandle extends Handle {
           janode_event.data.feed = message_data.publisher_id;
           if (message_data.rtp_stream) {
             const f = message_data.rtp_stream;
-            const fwd = {
+            const fwd: { [index: string]: unknown } = {
               host: f.host,
             };
             if (f.audio_stream_id) {
@@ -321,8 +323,8 @@ export class VideoRoomHandle extends Handle {
           }
           /* [multistream] */
           else if (message_data.forwarders) {
-            janode_event.data.forwarders = message_data.forwarders.map(f => {
-              const fwd = {
+            janode_event.data.forwarders = message_data.forwarders.map((f: any) => {
+              const fwd: { [index: string]: unknown } = {
                 host: f.host,
               };
               if (f.type === 'audio') {
@@ -373,13 +375,13 @@ export class VideoRoomHandle extends Handle {
         /* RTP forwarders list */
         case 'forwarders':
           if (message_data.rtp_forwarders) {
-            janode_event.data.forwarders = message_data.rtp_forwarders.map(({ publisher_id, rtp_forwarder }) => {
-              const pub = {
+            janode_event.data.forwarders = message_data.rtp_forwarders.map(({ publisher_id, rtp_forwarder }: any) => {
+              const pub: { [index: string]: unknown } = {
                 feed: publisher_id,
               };
 
-              pub.forwarders = rtp_forwarder.map(f => {
-                const fwd = {
+              pub.forwarders = rtp_forwarder.map((f: any) => {
+                const fwd: { [index: string]: unknown } = {
                   host: f.ip,
                 };
                 if (f.audio_stream_id) {
@@ -421,13 +423,13 @@ export class VideoRoomHandle extends Handle {
           }
           /* [multistream] */
           else if (message_data.publishers) {
-            janode_event.data.forwarders = message_data.publishers.map(({ publisher_id, forwarders }) => {
-              const pub = {
+            janode_event.data.forwarders = message_data.publishers.map(({ publisher_id, forwarders }: any) => {
+              const pub: { [index: string]: unknown } = {
                 feed: publisher_id,
               };
 
-              pub.forwarders = forwarders.map(f => {
-                const fwd = {
+              pub.forwarders = forwarders.map((f: any) => {
+                const fwd: { [index: string]: unknown } = {
                   host: f.host,
                 };
                 if (f.type === 'audio') {
@@ -514,8 +516,8 @@ export class VideoRoomHandle extends Handle {
           /* Publisher list notification */
           if (message_data.publishers) {
             janode_event.event = PLUGIN_EVENT.PUB_LIST;
-            janode_event.data.publishers = message_data.publishers.map(({ id, display, talking, audio_codec, video_codec, simulcast, streams }) => {
-              const pub = {
+            janode_event.data.publishers = message_data.publishers.map(({ id, display, talking, audio_codec, video_codec, simulcast, streams }: any) => {
+              const pub: { [index: string]: unknown } = {
                 feed: id,
                 display,
               };
@@ -662,7 +664,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.descriptions] - [multistream] The descriptions object, can define a description for the tracks separately e.g. track mid:0 'Video Camera', track mid:1 'Screen'
    */
   async joinPublisher({ room, feed, audio, video, data, bitrate, record, filename, display, token, pin, descriptions }: { room: number | string; feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; token?: string; pin?: string; record?: boolean; filename?: string; descriptions?: object[]; }): Promise<VIDEOROOM_EVENT_PUB_JOINED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_JOIN,
       ptype: PTYPE_PUBLISHER,
       room,
@@ -685,7 +687,7 @@ export class VideoRoomHandle extends Handle {
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.PUB_JOINED) {
       if (body.display) evtdata.display = body.display;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_PUB_JOINED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -710,8 +712,8 @@ export class VideoRoomHandle extends Handle {
    * @param [params.descriptions] - [multistream] The descriptions object, can define a description for the tracks separately e.g. track mid:0 'Video Camera', track mid:1 'Screen'
    * @param [params.jsep] - The JSEP offer
    */
-  async joinConfigurePublisher({ room, feed, audio, video, data, bitrate, record, filename, display, token, pin, e2ee, descriptions, jsep }: { room: number | string; feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; token?: string; pin?: string; record?: boolean; filename?: string; e2ee?: boolean; descriptions?: object[]; jsep?: RTCSessionDescription; }): Promise<VIDEOROOM_EVENT_PUB_JOINED> {
-    const body = {
+  async joinConfigurePublisher({ room, feed, audio, video, data, bitrate, record, filename, display, token, pin, e2ee, descriptions, jsep }: { room: number | string; feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; token?: string; pin?: string; record?: boolean; filename?: string; e2ee?: boolean; descriptions?: object[]; jsep?: JSEP; }): Promise<VIDEOROOM_EVENT_PUB_JOINED> {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_JOIN_CONFIGURE,
       ptype: PTYPE_PUBLISHER,
       room,
@@ -755,7 +757,7 @@ export class VideoRoomHandle extends Handle {
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.PUB_JOINED) {
       if (body.display) evtdata.display = body.display;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_PUB_JOINED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -789,9 +791,8 @@ export class VideoRoomHandle extends Handle {
    * @param [params.jsep] - The JSEP offer (publishers only)
    * @param [params.keyframe] - True to request a keyframe (publishers only)
    */
-  // TODO: I changed it to RTCSessionDescriptionInit
-  async configure({ audio, video, data, bitrate, record, filename, display, restart, update, streams, descriptions, sc_substream_layer, sc_substream_fallback_ms, sc_temporal_layers, e2ee, jsep, keyframe }: { audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; record?: boolean; filename?: string; restart?: boolean; update?: boolean; streams?: object[]; descriptions?: object[]; sc_substream_layer?: number; sc_substream_fallback_ms?: number; sc_temporal_layers?: number; e2ee?: boolean; jsep?: RTCSessionDescriptionInit; keyframe?: boolean; }): Promise<VIDEOROOM_EVENT_CONFIGURED> {
-    const body = {
+  async configure({ audio, video, data, bitrate, record, filename, display, restart, update, streams, descriptions, sc_substream_layer, sc_substream_fallback_ms, sc_temporal_layers, e2ee, jsep, keyframe }: { audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; record?: boolean; filename?: string; restart?: boolean; update?: boolean; streams?: object[]; descriptions?: object[]; sc_substream_layer?: number; sc_substream_fallback_ms?: number; sc_temporal_layers?: number; e2ee?: boolean; jsep?: JSEP; keyframe?: boolean; }): Promise<VIDEOROOM_EVENT_CONFIGURED> {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_CONFIGURE,
     };
 
@@ -845,7 +846,7 @@ export class VideoRoomHandle extends Handle {
       if (body.display) evtdata.display = body.display;
       if (typeof body.request === 'boolean') evtdata.restart = body.restart;
       if (typeof body.update === 'boolean') evtdata.update = body.update;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_CONFIGURED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -872,7 +873,7 @@ export class VideoRoomHandle extends Handle {
       const error = new Error('jsep must be an offer');
       return Promise.reject(error);
     }
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_PUBLISH,
     };
 
@@ -883,7 +884,7 @@ export class VideoRoomHandle extends Handle {
     if (typeof bitrate === 'number') body.bitrate = bitrate;
     if (typeof record === 'boolean') body.record = record;
     if (typeof filename === 'string') body.filename = filename;
-    if (typeof display === 'string') body.display = display;
+    if (typeof display === 'string') body.display = display; // @ts-expect-error
     if (typeof e2ee === 'boolean' && jsep) jsep.e2ee = e2ee;
 
     /* [multistream] */
@@ -915,7 +916,7 @@ export class VideoRoomHandle extends Handle {
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.CONFIGURED && evtdata.configured === 'ok') {
       if (body.display) evtdata.display = body.display;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_CONFIGURED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -932,7 +933,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.UNPUBLISHED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_UNPUBLISHED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -960,7 +961,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.pin] - The optional password required to join the room
    */
   async joinSubscriber({ room, feed, audio, video, data, offer_audio, offer_video, offer_data, private_id, sc_substream_layer, sc_substream_fallback_ms, sc_temporal_layers, streams, autoupdate, use_msid, token, pin }: { room: number | string; feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; offer_audio?: boolean; offer_video?: boolean; offer_data?: boolean; private_id?: number; sc_substream_layer?: number; sc_substream_fallback_ms?: number; sc_temporal_layers?: number; streams?: object[]; autoupdate?: boolean; use_msid?: boolean; token?: string; pin?: string; }): Promise<VIDEOROOM_EVENT_SUB_JOINED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_JOIN,
       ptype: PTYPE_LISTENER,
       room,
@@ -993,7 +994,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.SUB_JOINED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_SUB_JOINED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1003,7 +1004,7 @@ export class VideoRoomHandle extends Handle {
    *
    * @see VideoRoomHandle#joinSubscriber
    */
-  async joinListener(params): Promise<VIDEOROOM_EVENT_SUB_JOINED> {
+  async joinListener(params: { room: number | string; feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; offer_audio?: boolean; offer_video?: boolean; offer_data?: boolean; private_id?: number; sc_substream_layer?: number; sc_substream_fallback_ms?: number; sc_temporal_layers?: number; streams?: object[]; autoupdate?: boolean; use_msid?: boolean; token?: string; pin?: string; }): Promise<VIDEOROOM_EVENT_SUB_JOINED> {
     return this.joinSubscriber(params);
   }
 
@@ -1014,8 +1015,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.jsep - The JSEP answer
    * @param [params.e2ee] - True to hint an end-to-end encrypted negotiation
    */
-  // TODO: I changed it to RTCsessionDescriptionInit
-  async start({ jsep, e2ee }: { jsep: RTCSessionDescriptionInit; e2ee?: boolean; }): Promise<VIDEOROOM_EVENT_STARTED> {
+  async start({ jsep, e2ee }: { jsep: JSEP; e2ee?: boolean; }): Promise<VIDEOROOM_EVENT_STARTED> {
     const body = {
       request: REQUEST_START,
     };
@@ -1025,7 +1025,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body, jsep);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.STARTED && evtdata.started === 'ok')
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_STARTED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1041,7 +1041,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.PAUSED && evtdata.paused === 'ok')
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_PAUSED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1057,7 +1057,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.streams] - [multistream] streams array containing feed, mid, sub_mid ...
    */
   async switch({ to_feed, audio, video, data, streams }: { to_feed?: number | string; audio?: boolean; video?: boolean; data?: boolean; streams?: object[]; }): Promise<VIDEOROOM_EVENT_SWITCHED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_SWITCH,
     };
 
@@ -1075,7 +1075,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.SWITCHED && evtdata.switched === 'ok') {
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_SWITCHED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -1093,7 +1093,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.LEAVING)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_LEAVING;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1108,7 +1108,7 @@ export class VideoRoomHandle extends Handle {
    * @returns {Promise<VIDEOROOM_EVENT_UPDATED>}
    */
   async update({ subscribe, unsubscribe }: { subscribe: any[]; unsubscribe?: any[]; }): Promise<VIDEOROOM_EVENT_UPDATED> {
-    const body = {
+    const body: any = {
       request: REQUEST_UPDATE,
     };
     if (subscribe && Array.isArray(subscribe)) body.subscribe = subscribe;
@@ -1117,7 +1117,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.UPDATED) {
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_UPDATED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -1137,7 +1137,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.secret - The optional secret for the operation
    */
   async listParticipants({ room, secret }: { room: number | string; secret: string; }): Promise<VIDEOROOM_EVENT_PARTICIPANTS_LIST> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_LIST_PARTICIPANTS,
       room,
     };
@@ -1146,7 +1146,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.PARTICIPANTS_LIST)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_PARTICIPANTS_LIST;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1160,7 +1160,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.record - True starts recording for all participants in an already running conference, false stops the recording
    */
   async enable_recording({ room, secret, record }: { room: number | string; secret: string; record: boolean; }): Promise<VIDEOROOM_EVENT_RECORDING_ENABLED_STATE> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_ENABLE_RECORDING,
       room,
       record
@@ -1171,7 +1171,7 @@ export class VideoRoomHandle extends Handle {
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.RECORDING_ENABLED_STATE) {
       evtdata.room = body.room;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_RECORDING_ENABLED_STATE;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -1186,7 +1186,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.secret - The optional secret for the operation
    */
   async kick({ room, feed, secret }: { room: number | string; feed: number | string; secret: string; }): Promise<VIDEOROOM_EVENT_KICKED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_KICK,
       room,
       id: feed,
@@ -1198,7 +1198,7 @@ export class VideoRoomHandle extends Handle {
     if (event === PLUGIN_EVENT.SUCCESS) {
       evtdata.room = body.room;
       evtdata.feed = body.id;
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_KICKED;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -1211,7 +1211,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.room - The room to check
    */
   async exists({ room }: { room: number | string; }): Promise<VIDEOROOM_EVENT_EXISTS> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_EXISTS,
       room,
     };
@@ -1219,7 +1219,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.EXISTS)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_EXISTS;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1231,7 +1231,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.admin_key] - The admin key needed for invoking the API
    */
   async list({ admin_key }: { admin_key?: string; } = {}): Promise<VIDEOROOM_EVENT_LIST> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_LIST_ROOMS,
     };
     if (typeof admin_key === 'string') body.admin_key = admin_key;
@@ -1239,7 +1239,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.ROOMS_LIST)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_LIST;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1277,7 +1277,7 @@ export class VideoRoomHandle extends Handle {
   async create({ room, description, max_publishers, permanent, is_private, secret, pin, admin_key, bitrate,
     bitrate_cap, fir_freq, audiocodec, videocodec, talking_events, talking_level_threshold, talking_packets_threshold,
     require_pvtid, notify_joining, require_e2ee, record, rec_dir, videoorient, h264_profile, vp9_profile, threads }: { room?: number | string; description?: string; max_publishers?: number; permanent?: boolean; is_private?: boolean; secret?: string; pin?: string; admin_key?: string; bitrate?: number; bitrate_cap?: boolean; fir_freq?: number; audiocodec?: string; videocodec?: string; talking_events?: boolean; talking_level_threshold?: number; talking_packets_threshold?: number; require_pvtid?: boolean; notify_joining?: boolean; require_e2ee?: boolean; record?: boolean; rec_dir?: string; videoorient?: boolean; h264_profile?: string; vp9_profile?: string; threads?: number; }): Promise<VIDEOROOM_EVENT_CREATED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_CREATE,
     };
     if (typeof room === 'string' || typeof room === 'number') body.room = room;
@@ -1309,7 +1309,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.CREATED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_CREATED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1323,7 +1323,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.secret] - The secret needed to manage the room
    */
   async destroy({ room, permanent, secret }: { room: number | string; permanent?: boolean; secret?: string; }): Promise<VIDEOROOM_EVENT_DESTROYED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_DESTROY,
       room,
     };
@@ -1333,7 +1333,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.DESTROYED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_DESTROYED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1341,15 +1341,14 @@ export class VideoRoomHandle extends Handle {
   /**
    * Edit the ACL tokens for a room.
    *
-   * @param {Object} params
-   * @param {number|string} params.room - The room where to change the acl
-   * @param {"enable"|"disable"|"add"|"remove"} params.action - The action to execute on the acl
-   * @param {string[]} params.list - The list of tokens to execute the action onto
-   * @param {string} [params.secret] - The secret needed to manage the room
-   * @returns {Promise<module:videoroom-plugin~VIDEOROOM_EVENT_ALLOWED>}
+   * @param params
+   * @param params.room - The room where to change the acl
+   * @param params.action - The action to execute on the acl
+   * @param params.list - The list of tokens to execute the action onto
+   * @param [params.secret] - The secret needed to manage the room
    */
-  async allow({ room, action, list, secret }) {
-    const body = {
+  async allow({ room, action, list, secret }: { room: number | string, action: "enable" | "disable" | "add" | "remove", list: string[], secret?: string }): Promise<VIDEOROOM_EVENT_ALLOWED> {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_ALLOW,
       room,
       action,
@@ -1360,7 +1359,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.ALLOWED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_ALLOWED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1388,7 +1387,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.admin_key] - The admin key needed for invoking the API
    */
   async startForward({ room, feed, host, streams, audio_port, audio_rtcp_port, audio_ssrc, video_port, video_rtcp_port, video_ssrc, video_port_2, video_ssrc_2, video_port_3, video_ssrc_3, data_port, secret, admin_key }: { room: number | string; feed: number | string; host: string; streams?: object[]; audio_port?: number; audio_rtcp_port?: number; audio_ssrc?: number; video_port?: number; video_rtcp_port?: number; video_ssrc?: number; video_port_2?: number; video_ssrc_2?: number; video_port_3?: number; video_ssrc_3?: number; data_port?: number; secret?: string; admin_key?: string; }): Promise<VIDEOROOM_EVENT_RTP_FWD_STARTED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_RTP_FWD_START,
       room,
       publisher_id: feed,
@@ -1418,7 +1417,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.RTP_FWD_STARTED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_RTP_FWD_STARTED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1434,7 +1433,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.admin_key] - The admin key needed for invoking the API
    */
   async stopForward({ room, feed, stream, secret, admin_key }: { room: number | string; feed: number | string; stream: number | string; secret?: string; admin_key?: string; }): Promise<VIDEOROOM_EVENT_RTP_FWD_STOPPED> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_RTP_FWD_STOP,
       room,
       publisher_id: feed,
@@ -1446,7 +1445,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.RTP_FWD_STOPPED)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_RTP_FWD_STOPPED;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1459,7 +1458,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.secret] - The secret needed for managing the room
    */
   async listForward({ room, secret }: { room: number | string; secret?: string; }): Promise<VIDEOROOM_EVENT_RTP_FWD_LIST> {
-    const body = {
+    const body: { [index: string]: unknown } = {
       request: REQUEST_RTP_FWD_LIST,
       room,
     };
@@ -1468,7 +1467,7 @@ export class VideoRoomHandle extends Handle {
     const response = await this.message(body);
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.RTP_FWD_LIST)
-      return evtdata;
+      return evtdata as VIDEOROOM_EVENT_RTP_FWD_LIST;
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
   }
@@ -1506,7 +1505,7 @@ export interface VideoRoomHandleEventMap {
 
 /**
  * The response event when a publisher has joined.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed identifier
  * @property [display] - The dsplay name, if available
@@ -1548,7 +1547,7 @@ export type VIDEOROOM_EVENT_PUB_JOINED = {
 
 /**
  * The response event when a subscriber has joined.
- * 
+ *
  * @property - The involved room
  * @property - The published feed identifier
  * @property - The published feed display name
@@ -1601,7 +1600,7 @@ export type VIDEOROOM_PUB_LIST = {
 
 /**
  * The response event to a participant list request.
- * 
+ *
  * @property room - The involved room
  * @property participants - The list of current participants
  * @property participants[].feed - Feed identifier of the participant
@@ -1711,7 +1710,7 @@ export type VIDEOROOM_TALKING = {
 
 /**
  * The response event for room create request.
- * 
+ *
  * @property room - The created room
  * @property permanent - True if the room has been persisted on the Janus configuratin file
  */
@@ -1722,7 +1721,7 @@ export type VIDEOROOM_EVENT_CREATED = {
 
 /**
  * The response event for room destroy request.
- * 
+ *
  * @property room - The destroyed room
  * @property permanent - True if the room has been removed from the Janus configuration file
  */
@@ -1783,7 +1782,7 @@ export type RtpForwarder = {
 
 /**
  * The response event for RTP forward start request.
- * 
+ *
  * @property room - The involved room
  * @property [forwarder] - The forwarder object
  * @property [forwarders] - [multistream] The array of forwarders
@@ -1796,7 +1795,7 @@ export type VIDEOROOM_EVENT_RTP_FWD_STARTED = {
 
 /**
  * The response event for RTP forward stop request.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed identifier being forwarded
  * @property stream - The forwarder identifier
@@ -1810,7 +1809,7 @@ export type VIDEOROOM_EVENT_RTP_FWD_STOPPED = {
 /**
  * The response event for RTP forwarders list request.
  * @property {number|string} room - The involved room
- * 
+ *
  * @property {object[]} forwarders - The list of forwarders
  * @property {number|string} forwarders[].feed - The feed that is being forwarded
  * @property {RtpForwarder[]} forwarders[].forwarders -The list of the forwarders for this feed
@@ -1834,7 +1833,7 @@ export type VIDEOROOM_EVENT_LIST = {
 
 /**
  * The response event for ACL tokens edit (allowed) request.
- * 
+ *
  * @property list - The updated, complete, list of allowed tokens
  */
 export type VIDEOROOM_EVENT_ALLOWED = {
@@ -1883,7 +1882,7 @@ export type VIDEOROOM_EVENT_STARTED = {
 
 /**
  * The response event for subscriber pause request.
- * 
+ *
  * room - The involved room
  * feed - The feed that has been paused
  * paused - A string with the value returned by Janus
@@ -1896,7 +1895,7 @@ export type VIDEOROOM_EVENT_PAUSED = {
 
 /**
  * The response event for subscriber switch request.
- * 
+ *
  * @property room - The involved room
  * @property [from_feed] - The feed that has been switched from
  * @property [to_feed] - The feed that has been switched to
@@ -1939,7 +1938,7 @@ export type VIDEOROOM_EVENT_LEAVING = {
 
 /**
  * The response event for the kick request.
- * 
+ *
  * @property room - The involved room
  * @property feed - The feed that has been kicked
  */
@@ -1950,7 +1949,7 @@ export type VIDEOROOM_EVENT_KICKED = {
 
 /**
  * The response event for the recording enabled request.
- * 
+ *
  * @property room - The involved room
  * @property recording - Whether or not the room recording is now enabled
  */
@@ -1961,7 +1960,7 @@ export type VIDEOROOM_EVENT_RECORDING_ENABLED_STATE = {
 
 /**
  * [multistream] The response event for update subscriber request.
- * 
+ *
  * @property - The involved room
  * @property - The updated JSEP offer
  * @property - List of the updated streams in this subscription
@@ -1976,7 +1975,7 @@ export type VIDEOROOM_EVENT_UPDATED = {
   }[];
 }
 
-// TODO: How do i make this into types?
+// Ben TODO: How do i make this into types?
 /**
  * The exported plugin descriptor.
  *

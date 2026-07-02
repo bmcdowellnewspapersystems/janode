@@ -133,7 +133,7 @@ export const JANODE: { EVENT: JanodeCoreEvents } = {
  * @param data - The data from Janus
  * @returns True if the check succeeds
  */
-// TODO: add data type
+// Ben TODO: add data type
 export const isResponseData = (data: JanodeRequest): boolean => {
   if (typeof data === 'object' && data) {
     return Object.values(JANUS.RESPONSE).includes(data.janus);
@@ -148,7 +148,7 @@ export const isResponseData = (data: JanodeRequest): boolean => {
  * @param data - The data from Janus
  * @returns True if the check succeeds
  */
-// TODO: add data type
+// Ben TODO: add data type
 export const isEventData = (data: JanodeRequest): boolean => {
   if (typeof data === 'object' && data) {
     return data.janus === JANUS.EVENT.EVENT;
@@ -163,7 +163,7 @@ export const isEventData = (data: JanodeRequest): boolean => {
  * @param data - The data from Janus
  * @returns True if the check succeeds
  */
-// TODO: add data type
+// Ben TODO: add data type
 export const isErrorData = (data: JanodeRequest): boolean => {
   if (typeof data === 'object' && data) {
     return data.janus === JANUS.RESPONSE.ERROR;
@@ -178,7 +178,7 @@ export const isErrorData = (data: JanodeRequest): boolean => {
  * @param data - The data from Janus
  * @returns True if the check succeeds
  */
-// TODO: add data type
+// Ben TODO: add data type
 export const isTimeoutData = (data: JanodeRequest): boolean => {
   if (typeof data === 'object' && data) {
     return data.janus === JANUS.EVENT.TIMEOUT;
@@ -193,7 +193,7 @@ export const isTimeoutData = (data: JanodeRequest): boolean => {
  * @param data - The data from Janus
  * @returns True if the check succeeds
  */
-// TODO: add data type
+// Ben TODO: add data type
 export const isAckData = (data: JanodeRequest): boolean => {
   if (typeof data === 'object' && data) {
     return data.janus === JANUS.ACK;
