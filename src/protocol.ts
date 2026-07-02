@@ -89,16 +89,16 @@ export const JANUS = {
  * @property CONNECTION_ERROR - {@link module:connection~Connection#event:CONNECTION_ERROR CONNECTION_ERROR}
  */
 export type JanodeCoreEvents = {
-  CONNECTION_CLOSED: string,
-  SESSION_DESTROYED: string,
-  HANDLE_DETACHED: string,
-  HANDLE_ICE_FAILED: string,
-  HANDLE_HANGUP: string,
-  HANDLE_MEDIA: string,
-  HANDLE_WEBRTCUP: string,
-  HANDLE_SLOWLINK: string,
-  HANDLE_TRICKLE: string,
-  CONNECTION_ERROR: string,
+  readonly CONNECTION_CLOSED: 'connection_closed',
+  readonly SESSION_DESTROYED: 'session_destroyed',
+  readonly HANDLE_DETACHED: 'handle_detached',
+  readonly HANDLE_ICE_FAILED: 'handle_ice_failed',
+  readonly HANDLE_HANGUP: 'handle_hangup',
+  readonly HANDLE_MEDIA: 'handle_media',
+  readonly HANDLE_WEBRTCUP: 'handle_webrtcup',
+  readonly HANDLE_SLOWLINK: 'handle_slowlink',
+  readonly HANDLE_TRICKLE: 'handle_trickle',
+  readonly CONNECTION_ERROR: 'connection_error',
 }
 
 /**
@@ -106,7 +106,7 @@ export type JanodeCoreEvents = {
  *
  * @private
  */
-export const JANODE = {
+export const JANODE: { EVENT: JanodeCoreEvents } = {
   /**
    * Janode core events.
    *

@@ -9,17 +9,29 @@ import { EventEmitter } from 'events';
 import Logger from './utils/logger.ts';
 const LOG_NS = '[handle.ts]';
 import { getNumericID } from './utils/utils.ts';
-import { JANUS, JANODE, isAckData, isResponseData, isErrorData } from './protocol.ts';
+import { JANUS, JANODE, isAckData, isResponseData, isErrorData, JanodeCoreEvents } from './protocol.ts';
 
 import Session from './session.ts';
 import TransactionManager from './tmanager.ts';
 import type { TransactionOwner, PendingTransaction } from './tmanager.ts';
+import { VideoRoomHandleEventMap } from './plugins/videoroom-plugin.ts';
 
 // TODO: are JanodeRequest/JanusMessage and JanodeResponse/JanodeEvent the same thing?
 export type JanodeRequest = any
 export type JanodeResponse = any
 export type JanusMessage = any
 export type JanodeEvent = any
+
+export type HandleEventsMap = {
+  handle_detached: [{ id: number }],
+  handle_ice_failed: [{}],
+  handle_hangup: [{ reason: string }],
+  handle_media: [{ type: string, receiving: boolean, mid: string, substream: number, seconds: number }],
+  handle_webrtcup: [{}],
+  handle_slowlink: [{ uplink: boolean, media: string, mid: string, lost: number }],
+  handle_trickle: [{ completed: boolean, sdpMid: string, sdpMLineIndex: number, candidate: string }],
+  error: [{ message: string }]
+}
 
 const PLUGIN_EVENT_SYM = Symbol('plugin_event');
 
@@ -34,7 +46,7 @@ const PLUGIN_EVENT_SYM = Symbol('plugin_event');
  *
  * @hideconstructor
  */
-class Handle extends EventEmitter implements TransactionOwner {
+class Handle extends EventEmitter<HandleEventsMap & VideoRoomHandleEventMap> implements TransactionOwner {
   private _tm: TransactionManager;
   private _detaching: boolean;
   private _detached: boolean;
@@ -415,7 +427,7 @@ class Handle extends EventEmitter implements TransactionOwner {
    *
    * @private
    */
-  _getPluginEvent(janus_message: JanusMessage): JanodeEvent {
+  _getPluginEvent(janus_message: JanusMessage): JanodeCoreEvents {
     return janus_message[PLUGIN_EVENT_SYM] || {};
   }
 

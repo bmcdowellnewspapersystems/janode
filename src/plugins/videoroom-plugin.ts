@@ -41,9 +41,41 @@ const REQUEST_RTP_FWD_LIST = 'listforwarders';
 const PTYPE_PUBLISHER = 'publisher';
 const PTYPE_LISTENER = 'subscriber';
 
+type VideoRoomPluginEvents = {
+  readonly PUB_JOINED: 'videoroom_joined',
+  readonly SUB_JOINED: 'videoroom_subscribed',
+  readonly PUB_LIST: 'videoroom_publisher_list',
+  readonly PARTICIPANTS_LIST: 'videoroom_participants_list',
+  readonly PUB_PEER_JOINED: 'videoroom_publisher_joined',
+  readonly STARTED: 'videoroom_started',
+  readonly PAUSED: 'videoroom_paused',
+  readonly SWITCHED: 'videoroom_switched',
+  readonly CONFIGURED: 'videoroom_configured',
+  readonly SLOW_LINK: 'videoroom_slowlink',
+  readonly DISPLAY: 'videoroom_display',
+  readonly UNPUBLISHED: 'videoroom_unpublished',
+  readonly LEAVING: 'videoroom_leaving',
+  readonly UPDATED: 'videoroom_updated',
+  readonly KICKED: 'videoroom_kicked',
+  readonly RECORDING_ENABLED_STATE: 'videoroom_recording_enabled_state',
+  readonly TALKING: 'videoroom_talking',
+  readonly SC_SUBSTREAM_LAYER: 'videoroom_sc_substream_layer',
+  readonly SC_TEMPORAL_LAYERS: 'videoroom_sc_temporal_layers',
+  readonly ALLOWED: 'videoroom_allowed',
+  readonly EXISTS: 'videoroom_exists',
+  readonly ROOMS_LIST: 'videoroom_list',
+  readonly CREATED: 'videoroom_created',
+  readonly DESTROYED: 'videoroom_destroyed',
+  readonly RTP_FWD_STARTED: 'videoroom_rtp_fwd_started',
+  readonly RTP_FWD_STOPPED: 'videoroom_rtp_fwd_stopped',
+  readonly RTP_FWD_LIST: 'videoroom_rtp_fwd_list',
+  readonly SUCCESS: 'videoroom_success',
+  readonly ERROR: 'videoroom_error',
+}
+
 /* These are the events/responses that the Janode plugin will manage */
 /* Some of them will be exported in the plugin descriptor */
-const PLUGIN_EVENT = {
+const PLUGIN_EVENT: VideoRoomPluginEvents = {
   PUB_JOINED: 'videoroom_joined',
   SUB_JOINED: 'videoroom_subscribed',
   PUB_LIST: 'videoroom_publisher_list',
@@ -808,7 +840,6 @@ export class VideoRoomHandle extends Handle {
         this.hangup().catch(() => { });
       throw e;
     });
-
     const { event, data: evtdata } = this._getPluginEvent(response);
     if (event === PLUGIN_EVENT.CONFIGURED && evtdata.configured === 'ok') {
       if (body.display) evtdata.display = body.display;
@@ -836,7 +867,7 @@ export class VideoRoomHandle extends Handle {
    * @param [params.e2ee] - True to notify end-to-end encryption for this connection
    * @param params.jsep - The JSEP offer
    */
-  async publish({ audio, video, data, bitrate, record, filename, display, descriptions, e2ee, jsep }: { audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; record?: boolean; filename?: string; descriptions?: object[]; e2ee?: boolean; jsep: RTCSessionDescription; }): Promise<VIDEOROOM_EVENT_CONFIGURED> {
+  async publish({ audio, video, data, bitrate, record, filename, display, descriptions, e2ee, jsep }: { audio?: boolean; video?: boolean; data?: boolean; display?: string; bitrate?: number; record?: boolean; filename?: string; descriptions?: object[]; e2ee?: boolean; jsep: RTCSessionDescriptionInit; }): Promise<VIDEOROOM_EVENT_CONFIGURED> {
     if (typeof jsep === 'object' && jsep && jsep.type !== 'offer') {
       const error = new Error('jsep must be an offer');
       return Promise.reject(error);
@@ -1076,7 +1107,7 @@ export class VideoRoomHandle extends Handle {
    *
    * @returns {Promise<VIDEOROOM_EVENT_UPDATED>}
    */
-  async update({ subscribe, unsubscribe }: { subscribe: object[]; unsubscribe: object[]; }): Promise<VIDEOROOM_EVENT_UPDATED> {
+  async update({ subscribe, unsubscribe }: { subscribe: any[]; unsubscribe?: any[]; }): Promise<VIDEOROOM_EVENT_UPDATED> {
     const body = {
       request: REQUEST_UPDATE,
     };
@@ -1444,6 +1475,9 @@ export class VideoRoomHandle extends Handle {
 
 }
 
+
+//BEN TODO regroup and rename these types to be clearer
+
 /**
  * The payload of the plugin message (cfr. Janus docs).
  * {@link https://janus.conf.meetecho.com/docs/videoroom.html}
@@ -1451,6 +1485,24 @@ export class VideoRoomHandle extends Handle {
  * @private
  */
 export type VideoRoomData = object
+
+export interface VideoRoomHandleEventMap {
+  videoroom_publisher_joined: [VIDEOROOM_PUB_PEER_JOINED],
+  videoroom_publisher_list: [VIDEOROOM_PUB_LIST],
+  videoroom_destroyed: [VIDEOROOM_EVENT_DESTROYED],
+  videoroom_unpublished: [VIDEOROOM_EVENT_UNPUBLISHED],
+  videoroom_leaving: [VIDEOROOM_EVENT_LEAVING],
+  videoroom_display: [VIDEOROOM_DISPLAY],
+  videoroom_configured: [VIDEOROOM_EVENT_CONFIGURED],
+  videoroom_slowlink: [VIDEOROOM_SLOWLINK],
+  videoroom_talking: [VIDEOROOM_TALKING],
+  videoroom_kicked: [VIDEOROOM_EVENT_KICKED],
+  videoroom_record_enabled_state: [VIDEOROOM_EVENT_RECORDING_ENABLED_STATE],
+  videoroom_sc_substream_layer: [VIDEOROOM_SC_SUBSTREAM_LAYER],
+  videoroom_sc_temporal_layers: [VIDEOROOM_SC_TEMPORAL_LAYERS],
+  videoroom_updated: [VIDEOROOM_EVENT_UPDATED],
+  videoroom_error: [Error]
+}
 
 /**
  * The response event when a publisher has joined.
@@ -1472,20 +1524,24 @@ export type VideoRoomData = object
  * @property [jsep] - The JSEP answer
  */
 export type VIDEOROOM_EVENT_PUB_JOINED = {
-  room: number | string;
-  feed: number | string;
+  room: string;
+  feed: string;
   display?: string;
   description: string;
   private_id: number;
   publishers: {
-    feed: number | string;
+    feed: string;
     display?: string;
     talking?: boolean;
     audiocodec?: string;
     videocodec?: string;
     simulcast: boolean;
-    streams?: object[];
-  };
+    streams?: { // BEN TODO See Pub List Streams
+      type: "audio" | "video" | "data",
+      mindex: number,
+      mid: string
+    }[]
+  }[];
   e2ee?: boolean;
   jsep?: RTCSessionDescription;
 }
@@ -1499,18 +1555,54 @@ export type VIDEOROOM_EVENT_PUB_JOINED = {
  * @property - [multistream] Streams description as returned by Janus
  */
 export type VIDEOROOM_EVENT_SUB_JOINED = {
-  room: number,
-  feed?: number,
+  room: string,
+  feed?: string,
   display?: string,
-  streams?: object[]
+  streams?: { // BEN TODO see Pub List Streams
+    type: "audio" | "video" | "data",
+    mindex: number,
+    mid: string
+  }[]
   jsep: RTCSessionDescriptionInit
+}
+
+/**
+* Active publishers list updated.
+* @event VideoRoomHandle#event:VIDEOROOM_PUB_LIST
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The current feed identifier
+* @property {object[]} publishers - List of the new publishers
+* @property {number|string} publishers[].feed - Feed identifier of the new publisher
+* @property {string} publishers[].display - Display name of the new publisher
+* @property {boolean} [publishers[].talking] - Whether the publisher is talking or not
+* @property {string} [publishers[].audiocodec] - The audio codec used by active publisher
+* @property {string} [publishers[].videocodec] - The video codec used by active publisher
+* @property {boolean} publishers[].simulcast - True if the publisher uses simulcast (VP8 and H.264 only)
+* @property {object[]} [publishers[].streams] - [multistream] Streams description as returned by Janus
+*/
+export type VIDEOROOM_PUB_LIST = {
+  room: string,
+  feed: string,
+  publishers: {
+    feed: string,
+    display: string,
+    talking?: boolean,
+    audiocodec?: string,
+    videocodec?: string,
+    simulcast?: boolean,
+    streams: { //TODO incomplete, different fields depending on type, perhaps should use disciminated union type? 
+      type: "audio" | "video" | "data",
+      mindex: number,
+      mid: string
+    }[]
+  }[]
 }
 
 /**
  * The response event to a participant list request.
  * 
  * @property room - The involved room
- * @property feed - The current published feed
  * @property participants - The list of current participants
  * @property participants[].feed - Feed identifier of the participant
  * @property [participants[].display] - The participant's display name, if available
@@ -1519,13 +1611,102 @@ export type VIDEOROOM_EVENT_SUB_JOINED = {
  */
 export type VIDEOROOM_EVENT_PARTICIPANTS_LIST = {
   room: number | string;
-  feed: number | string;
   participants: {
     feed: number | string;
     display?: string;
     publisher: boolean;
     talking?: boolean;
   };
+}
+
+/**
+* A peer has joined the room (notify-joining).
+*
+* @event VideoRoomHandle#event:VIDEOROOM_PUB_PEER_JOINED
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed identifier that joined
+* @property {string} display - The display name of the peer
+*/
+export type VIDEOROOM_PUB_PEER_JOINED = {
+  room: number | string,
+  feed: number | string,
+  display: string
+}
+
+/**
+* A participant has changed the display name.
+* @event VideoRoomHandle#event:VIDEOROOM_DISPLAY
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed of the peer that change display name
+* @property {string} display - The new display name of the peer
+*/
+export type VIDEOROOM_DISPLAY = {
+  room: string,
+  feed: string,
+  display: string
+}
+
+/**
+* A handle received a slow link notification.
+*
+* @event VideoRoomHandle#event:VIDEOROOM_SLOWLINK
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed of the peer that change display name
+* @property {number} bitrate - The current bitrate cap for the participant
+*/
+type VIDEOROOM_SLOWLINK = {
+  room: string | number,
+  feed: string | number,
+  bitrate: number
+}
+
+/**
+* A switch to a different simulcast substream has been completed.
+* @event VideoRoomHandle#event:VIDEOROOM_SC_SUBSTREAM_LAYER
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed of the peer this notification refers to
+* @property {number} sc_substream_layer - The new simuclast substream layer relayed
+*/
+type VIDEOROOM_SC_SUBSTREAM_LAYER = {
+  room: number | string,
+  feed: number | string,
+  sc_substream_layer: number
+}
+
+/**
+* A switch to a different number of simulcast temporal layers has been completed.
+*
+* @event VideoRoomHandle#event:VIDEOROOM_SC_TEMPORAL_LAYERS
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed of the peer this switch notification refers to
+* @property {number} sc_temporal_layers - The new number of simuclast teporal layers relayed
+*/
+type VIDEOROOM_SC_TEMPORAL_LAYERS = {
+  room: number | string,
+  feed: number | string,
+  sc_temporal_layers: number
+}
+
+/**
+* Notify if the current user is talking.
+*
+* @event VideoRoomHandle#event:VIDEOROOM_TALKING
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed of the peer this talking notification refers to
+* @property {boolean} talking - True if the participant is talking
+* @property {number} audio_level - The audio level of the participant in the range [0,127]
+*/
+export type VIDEOROOM_TALKING = {
+  room: string,
+  feed: string,
+  talking: boolean,
+  audio_level: number
 }
 
 /**
@@ -1543,11 +1724,11 @@ export type VIDEOROOM_EVENT_CREATED = {
  * The response event for room destroy request.
  * 
  * @property room - The destroyed room
- * @property permanent - True if the room has been removed from the Janus configuratin file
+ * @property permanent - True if the room has been removed from the Janus configuration file
  */
 export type VIDEOROOM_EVENT_DESTROYED = {
   room: number | string;
-  permanent: boolean;
+  permanent?: boolean;
 }
 
 /**
@@ -1557,6 +1738,7 @@ export type VIDEOROOM_EVENT_DESTROYED = {
  */
 export type VIDEOROOM_EVENT_EXISTS = {
   room: number | string;
+  exists: boolean
 }
 
 /**
@@ -1647,7 +1829,7 @@ export type VIDEOROOM_EVENT_RTP_FWD_LIST = {
  * @property list - The list of the room as returned by Janus
  */
 export type VIDEOROOM_EVENT_LIST = {
-  list: objectp[]
+  list: object[]
 }
 
 /**
@@ -1738,8 +1920,8 @@ export type VIDEOROOM_EVENT_SWITCHED = {
  * @property feed - The feed that unpublished
  */
 export type VIDEOROOM_EVENT_UNPUBLISHED = {
-  room: number | string,
-  feed: number | string,
+  room: string,
+  feed: string,
 }
 
 /**
@@ -1750,8 +1932,8 @@ export type VIDEOROOM_EVENT_UNPUBLISHED = {
  * @property reason - An optional string with the reason of the leaving
  */
 export type VIDEOROOM_EVENT_LEAVING = {
-  room: number | string,
-  feed: number | string,
+  room: string,
+  feed: string,
   reason?: string
 }
 
@@ -1762,8 +1944,8 @@ export type VIDEOROOM_EVENT_LEAVING = {
  * @property feed - The feed that has been kicked
  */
 export type VIDEOROOM_EVENT_KICKED = {
-  room: number | string;
-  feed: number | string;
+  room: string;
+  feed: string;
 }
 
 /**
@@ -1785,9 +1967,13 @@ export type VIDEOROOM_EVENT_RECORDING_ENABLED_STATE = {
  * @property - List of the updated streams in this subscription
  */
 export type VIDEOROOM_EVENT_UPDATED = {
-  room: number | string;
+  room: string;
   jsep?: RTCSessionDescription;
-  streams: object[];
+  streams: { // BEN TODO see other stream ben todos
+    type: "audio" | "video" | "data",
+    mindex: number,
+    mid: string
+  }[];
 }
 
 // TODO: How do i make this into types?
@@ -1853,7 +2039,7 @@ export default {
      * @event VideoRoomHandle#event:VIDEOROOM_DESTROYED
      * @type {Object}
      * @property {number|string} room - The destroyed room
-     * @property {boolean} permanent - True if the room has been removed from the Janus configuratin file
+     * @property {boolean} permanent - True if the room has been removed from the Janus configuration file
      */
     VIDEOROOM_DESTROYED: PLUGIN_EVENT.DESTROYED,
 
