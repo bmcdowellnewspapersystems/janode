@@ -18,6 +18,7 @@ const REQUEST_JOIN_CONFIGURE = 'joinandconfigure';
 const REQUEST_LIST_PARTICIPANTS = 'listparticipants';
 const REQUEST_ENABLE_RECORDING = 'enable_recording';
 const REQUEST_KICK = 'kick';
+const REQUEST_MODERATE = 'moderate';
 const REQUEST_START = 'start';
 const REQUEST_PAUSE = 'pause';
 const REQUEST_SWITCH = 'switch';
@@ -55,6 +56,7 @@ type VideoRoomPluginEvents = {
   readonly LEAVING: 'videoroom_leaving',
   readonly UPDATED: 'videoroom_updated',
   readonly KICKED: 'videoroom_kicked',
+  readonly MODERATED: 'videoroom_moderated'
   readonly RECORDING_ENABLED_STATE: 'videoroom_recording_enabled_state',
   readonly TALKING: 'videoroom_talking',
   readonly SC_SUBSTREAM_LAYER: 'videoroom_sc_substream_layer',
@@ -89,6 +91,7 @@ const PLUGIN_EVENT: VideoRoomPluginEvents = {
   LEAVING: 'videoroom_leaving',
   UPDATED: 'videoroom_updated',
   KICKED: 'videoroom_kicked',
+  MODERATED: 'videoroom_moderated',
   RECORDING_ENABLED_STATE: 'videoroom_recording_enabled_state',
   TALKING: 'videoroom_talking',
   SC_SUBSTREAM_LAYER: 'videoroom_sc_substream_layer',
@@ -120,9 +123,9 @@ interface JSEP extends RTCSessionDescriptionInit {
  * @extends Handle
  */
 export class VideoRoomHandle extends Handle {
-  feed: number | string | null;
+  feed: string | null;
   streams: null;
-  room: number | string | null;
+  room: string | null;
   /**
    * Create a Janode VideoRoom handle.
    *
@@ -622,6 +625,14 @@ export class VideoRoomHandle extends Handle {
             /* [multistream] */
             if (typeof message_data.mid !== 'undefined') janode_event.data.mid = message_data.mid;
             janode_event.data.sc_temporal_layers = message_data.temporal;
+            break;
+          }
+          /* Publisher moderated, i.e. a track has been muted or unmuted */
+          if (typeof message_data.moderation !== 'undefined') {
+            janode_event.event = PLUGIN_EVENT.MODERATED;
+            janode_event.data.feed = message_data.id;
+            janode_event.data.mid = message_data.mid
+            janode_event.data.moderation = message_data.moderation
             break;
           }
       }
@@ -1185,7 +1196,7 @@ export class VideoRoomHandle extends Handle {
    * @param params.feed - The identifier of the feed to kick out
    * @param params.secret - The optional secret for the operation
    */
-  async kick({ room, feed, secret }: { room: number | string; feed: number | string; secret: string; }): Promise<VIDEOROOM_EVENT_KICKED> {
+  async kick({ room, feed, secret }: { room: number | string; feed: number | string; secret?: string; }): Promise<VIDEOROOM_EVENT_KICKED> {
     const body: { [index: string]: unknown } = {
       request: REQUEST_KICK,
       room,
@@ -1199,6 +1210,29 @@ export class VideoRoomHandle extends Handle {
       evtdata.room = body.room;
       evtdata.feed = body.id;
       return evtdata as VIDEOROOM_EVENT_KICKED;
+    }
+    const error = new Error(`unexpected response to ${body.request} request`);
+    throw (error);
+  }
+
+  async moderate({ room, feed, mID, mute, secret }: { room: string, feed: string, mID: string, mute: boolean, secret?: string }) {
+    const body = {
+      request: REQUEST_MODERATE,
+      room,
+      id: feed,
+      mid: mID,
+      mute
+    };
+    //@ts-ignore
+    if (typeof secret === 'string') body.secret = secret;
+    const response = await this.message(body);
+    const { event, data: evtdata } = this._getPluginEvent(response);
+    if (event === PLUGIN_EVENT.SUCCESS) {
+      evtdata.room = body.room;
+      evtdata.feed = body.id;
+      evtdata.mid = body.mid;
+      evtdata.mute = body.mute
+      return evtdata;
     }
     const error = new Error(`unexpected response to ${body.request} request`);
     throw (error);
@@ -1496,6 +1530,7 @@ export interface VideoRoomHandleEventMap {
   videoroom_slowlink: [VIDEOROOM_SLOWLINK],
   videoroom_talking: [VIDEOROOM_TALKING],
   videoroom_kicked: [VIDEOROOM_EVENT_KICKED],
+  videoroom_moderated: [VIDEOROOM_EVENT_MODERATED],
   videoroom_record_enabled_state: [VIDEOROOM_EVENT_RECORDING_ENABLED_STATE],
   videoroom_sc_substream_layer: [VIDEOROOM_SC_SUBSTREAM_LAYER],
   videoroom_sc_temporal_layers: [VIDEOROOM_SC_TEMPORAL_LAYERS],
@@ -1508,7 +1543,7 @@ export interface VideoRoomHandleEventMap {
  *
  * @property room - The involved room
  * @property feed - The feed identifier
- * @property [display] - The dsplay name, if available
+ * @property [display] - The display name, if available
  * @property description - A description of the room, if available
  * @property private_id - The private id that can be used when subscribing
  * @property publishers - The list of active publishers
@@ -1948,6 +1983,23 @@ export type VIDEOROOM_EVENT_KICKED = {
 }
 
 /**
+* A publisher has been moderated (muted or unmuted)
+* 
+* @event VideoRoomHandle#event:VIDEOROOM_MODERATED
+* @type {Object}
+* @property {number|string} room - The involved room
+* @property {number|string} feed - The feed that has been moderated
+* @property {string} mid - The mid of the moderated track
+* @property {'muted'|'unmuted' } moderation - The moderation action taken
+*/
+export type VIDEOROOM_EVENT_MODERATED = {
+  room: string,
+  feed: string,
+  mid: string,
+  moderation: "muted" | "unmuted"
+}
+
+/**
  * The response event for the recording enabled request.
  *
  * @property room - The involved room
@@ -1993,6 +2045,7 @@ export type VIDEOROOM_EVENT_UPDATED = {
  * @property EVENT.VIDEOROOM_SLOWLINK {@link VideoRoomHandle#event:VIDEOROOM_SLOWLINK VIDEOROOM_SLOWLINK}
  * @property EVENT.VIDEOROOM_TALKING {@link VideoRoomHandle#event:VIDEOROOM_TALKING VIDEOROOM_TALKING}
  * @property EVENT.VIDEOROOM_KICKED {@link VideoRoomHandle#event:VIDEOROOM_KICKED VIDEOROOM_KICKED}
+ * @property EVENT.VIDEOROOM_MODERATED {@link VideoRoomHandle#event:VIDEOROOM_MODERATED VIDEOROOM_MODERATED}
  * @property EVENT.VIDEOROOM_RECORDING_ENABLED_STATE {@link VideoRoomHandle#event:VIDEOROOM_RECORDING_ENABLED_STATE VIDEOROOM_RECORDING_ENABLED_STATE}
  * @property EVENT.VIDEOROOM_SC_SUBSTREAM_LAYER {@link VideoRoomHandle#event:VIDEOROOM_SC_SUBSTREAM_LAYER VIDEOROOM_SC_SUBSTREAM_LAYER}
  * @property EVENT.VIDEOROOM_SC_TEMPORAL_LAYERS {@link VideoRoomHandle#event:VIDEOROOM_SC_TEMPORAL_LAYERS VIDEOROOM_SC_TEMPORAL_LAYERS}
@@ -2123,6 +2176,18 @@ export default {
      * @property {number|string} feed - The feed that has been kicked
      */
     VIDEOROOM_KICKED: PLUGIN_EVENT.KICKED,
+
+    /**
+     * A publisher has been moderated (muted or unmuted)
+     * 
+     * @event VideoRoomHandle#event:VIDEOROOM_MODERATED
+     * @type {Object}
+     * @property {number|string} room - The involved room
+     * @property {number|string} feed - The feed that has been moderated
+     * @property {string} mid - The mid of the moderated track
+     * @property {'muted'|'unmuted' } moderation - The moderation action taken
+     */
+    VIDEOROOM_MODERATED: PLUGIN_EVENT.MODERATED,
 
     /**
      * Conference recording has been enabled or disabled.
